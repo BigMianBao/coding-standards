@@ -1,0 +1,109 @@
+schema: spec-driven
+
+context: |
+  ## 项目规范体系
+
+  本项目遵循企业级编程规范（共20个详细文件，位于 openspec/rules/）。
+  所有提案、设计、任务和代码实现必须严格遵循以下规范。
+
+  ### 核心铁律
+  1. 标准化：统一目录、命名、配置、工程规则，禁止无依据个性化自定义
+  2. 分层解耦：纯业务逻辑不直接依赖框架、基础设施
+  3. 安全左移：安全审查嵌入开发阶段，不在上线前临时补全
+  4. 文档即代码：需求/架构/接口文档与代码同仓库、同版本
+
+  ### 技术选型白名单（禁止使用白名单外的技术）
+  - 前端：Vue3 / React + Vite
+  - .NET后端：ASP.NET Core LTS（禁止 .NET Framework）
+  - Java后端：SpringBoot / SpringCloud
+  - Go后端：Gin / Kitex
+  - Python后端：FastAPI（禁止 Flask）
+  - 数据库：MySQL 8.0+ / PostgreSQL 14+
+  - 缓存：Redis
+  - 消息队列：RocketMQ / Kafka
+  - 通信：gRPC / REST（禁止裸TCP Socket）
+
+  ### 架构分层（Clean Architecture）
+  - Domain 层：零外部依赖，禁止 import ORM/http 框架
+  - Application 层：依赖 Domain，定义接口（IUserRepository），禁止引用 Infrastructure 实现
+  - Infrastructure 层：实现 Application 定义的接口
+  - API 层：只做参数校验和响应格式化，不含业务逻辑
+  - 依赖方向：外层 → 内层，单向，禁止反向和循环依赖
+
+  ### 命名规范
+  - 类/接口：PascalCase（UserService）
+  - 接口前缀：I + PascalCase（IUserRepository）
+  - 私有字段：_ + camelCase（_dbContext）
+  - 常量：PascalCase（MaxPageSize）
+  - 禁止拼音命名、无意义单字母变量（循环 i/j 除外）
+
+  ### 安全规范
+  - 禁止密钥/密码/token 硬编码
+  - 禁止字符串拼接 SQL，统一参数化查询
+  - 接口双层校验：路由鉴权 + 资源归属校验
+  - 生产环境 CORS 禁止 * 通配符
+  - 敏感数据通过 DTO 输出，禁止返回原始数据库实体
+  - Cookie 配置 HttpOnly、Secure、SameSite
+
+  ### 配置管理
+  - 禁止硬编码 IP、端口、密钥、超时时间等魔法数字
+  - 所有可变参数通过配置文件或环境变量注入
+  - 多环境配置：.env.dev / .env.test / .env.prod
+
+  ### Git 规范
+  - Conventional Commits：<type>(<scope>): <描述>
+  - 禁止直推 main，必须通过 PR
+  - 单次提交原子化
+
+  ### REST API 规范
+  - 统一前缀：/api/v1/资源名
+  - 禁止返回原始数据库实体，统一使用 DTO
+  - 分页：?page=1&pageSize=20
+  - 错误响应遵循 RFC 7807
+
+  ### 异常处理
+  - 禁止空 catch 吞异常
+  - 自定义业务异常携带业务ID和错误上下文
+  - 全局统一中间件捕获，标准化返回错误信息
+
+  ### 代码约束
+  - 单文件不超过 300 行，超过必须拆分
+  - 重复代码 3 处以上必须抽取
+  - shared/common 只放跨3个以上模块的纯工具函数，禁止放业务逻辑
+
+  ### 详细规范文件索引（openspec/rules/ 目录）
+  - 01-规范总则 | 02-项目命名与版本 | 03-Git分支管理 | 04-Git提交规范
+  - 05-技术选型 | 06-立项权限流程 | 07-项目目录结构 | 08-架构分层与依赖
+  - 09-项目搭建流程 | 10-代码命名 | 11-代码复用与去重 | 12-异常处理
+  - 13-配置管理 | 14-REST-API设计 | 15-安全编码 | 16-密钥管理
+  - 17-测试策略 | 18-发布运维 | 19-项目验收 | 20-规范落地保障
+
+rules:
+  proposal:
+    - 必须明确技术选型，且选型在公司白名单内（见 context 技术选型白名单）
+    - 必须包含"非目标"（Non-goals）section，明确不做什么
+    - 涉及架构变更时必须说明分层影响，确认不违反 Clean Architecture 依赖方向
+    - 涉及安全变更时必须说明安全影响（密钥管理、越权防护、CORS等）
+    - 如有技术选型决策，必须要求编写 ADR 文档（docs/decisions/ADR-XXX.md）
+    - 需求模糊时必须追问用户，禁止自行猜测填充业务逻辑
+  design:
+    - 必须画出分层依赖图，确认 Domain 层零外部依赖
+    - 模块间通信必须通过接口或事件，禁止直接 import 其他模块内部实现
+    - 必须说明数据流转路径：API → Application → Domain → Infrastructure
+    - 必须定义 DTO，禁止直接返回数据库实体
+    - 涉及数据库变更时必须说明迁移策略
+    - 必须考虑多环境配置方案（dev/test/prod）
+    - 单文件预计超过 300 行时必须在设计阶段拆分
+  tasks:
+    - 每个任务必须原子化，单任务不超过 2 小时工作量
+    - 必须包含安全检查项（密钥硬编码检查、接口校验检查）
+    - 必须包含配置检查项（禁止硬编码 IP/端口/超时）
+    - Git 提交任务必须遵循 Conventional Commits 格式
+    - 涉及新接口时必须包含 DTO 定义和参数校验任务
+    - 涉及异常处理时必须包含全局异常处理器配置
+    - 任务顺序必须遵循分层依赖：Domain → Application → Infrastructure → API
+  specs:
+    - 需求场景必须包含正常流程和异常流程
+    - 必须包含安全相关场景（越权访问、输入校验、注入防护）
+    - 涉及 API 时必须明确 URL、HTTP 方法、请求/响应 DTO
+    - 验收标准必须可测试、可量化
