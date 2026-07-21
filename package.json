@@ -1,0 +1,13 @@
+{
+  "name": "coding-standards-setup",
+  "version": "1.0.0",
+  "description": "企业编程规范一键安装 - CodeBuddy + OpenSpec",
+  "bin": {
+    "coding-standards-setup": "./install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BigMianBao/coding-standards.git"
+  },
+  "license": "MIT"
+}
