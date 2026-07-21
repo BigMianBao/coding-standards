@@ -13,7 +13,7 @@ echo "========================================"
 echo ""
 
 # 1. 部署全局规则到 ~/.workbuddy/
-echo "[1/4] 部署全局规则到 ~/.workbuddy/..."
+echo "[1/5] 部署全局规则到 ~/.workbuddy/..."
 mkdir -p ~/.workbuddy/rules
 cp "$SCRIPT_DIR/rules/"*.md ~/.workbuddy/rules/
 cp "$SCRIPT_DIR/MEMORY.md" ~/.workbuddy/MEMORY.md
@@ -22,15 +22,26 @@ echo "  -> ~/.workbuddy/MEMORY.md 已更新"
 echo ""
 
 # 2. 部署 CodeBuddy 用户规则（全局，所有项目生效）
-echo "[2/4] 部署 CodeBuddy 用户规则..."
+echo "[2/5] 部署 CodeBuddy 用户规则..."
 mkdir -p ~/.codebuddy/rules/coding-standards
 cp "$SCRIPT_DIR/templates/coding-standards.mdc" ~/.codebuddy/rules/coding-standards/RULE.mdc
 echo "  -> ~/.codebuddy/rules/coding-standards/RULE.mdc 已部署"
 echo "  -> 规则类型：alwaysApply（每次会话自动加载）"
 echo ""
 
-# 3. 确保 OpenSpec CLI 已安装
-echo "[3/4] 检查 OpenSpec CLI..."
+# 3. 部署 OpenSpec 斜杠命令和技能到 CodeBuddy 用户级（全局，所有项目可用 /opsx:* 命令）
+echo "[3/5] 部署 OpenSpec 命令和技能..."
+mkdir -p ~/.codebuddy/commands/opsx
+cp "$SCRIPT_DIR/templates/codebuddy-commands/opsx/"*.md ~/.codebuddy/commands/opsx/
+mkdir -p ~/.codebuddy/skills
+cp -r "$SCRIPT_DIR/templates/codebuddy-skills/"* ~/.codebuddy/skills/
+echo "  -> 6 个斜杠命令已部署到 ~/.codebuddy/commands/opsx/"
+echo "  -> 6 个技能文件已部署到 ~/.codebuddy/skills/"
+echo "  -> 所有项目可用 /opsx:propose、/opsx:apply、/opsx:archive 等命令"
+echo ""
+
+# 4. 确保 OpenSpec CLI 已安装
+echo "[4/5] 检查 OpenSpec CLI..."
 if command -v openspec &> /dev/null; then
     echo "  -> OpenSpec CLI 已安装：$(openspec --version)"
 else
@@ -40,8 +51,8 @@ else
 fi
 echo ""
 
-# 4. 完成
-echo "[4/4] 部署完成！"
+# 5. 完成
+echo "[5/5] 部署完成！"
 echo ""
 echo "========================================"
 echo "  全局规范已就绪"
