@@ -2,9 +2,10 @@
 // ============================================================
 // 跨平台一键安装脚本 - Node.js
 // 统一命令：npx github:BigMianBao/coding-standards
+// 项目初始化：npx github:BigMianBao/coding-standards --init /path/to/project
 // 支持：macOS / Windows / Linux
 // ============================================================
-const { execSync, execFileSync } = require("child_process");
+const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -12,6 +13,16 @@ const os = require("os");
 const REPO_URL = "https://github.com/BigMianBao/coding-standards.git";
 const HOME = os.homedir();
 const INSTALL_DIR = path.join(HOME, ".workbuddy", "coding-standards");
+
+// ---------- 解析参数 ----------
+const args = process.argv.slice(2);
+let initProject = null;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--init" && args[i + 1]) {
+    initProject = path.resolve(args[i + 1]);
+    break;
+  }
+}
 
 // ---------- 工具函数 ----------
 function log(msg) { console.log(msg); }
@@ -42,7 +53,93 @@ function copyFiles(srcDir, pattern, destDir) {
   }
 }
 
-// ---------- 开头 ----------
+// ---------- 确保仓库存在（两种模式共用） ----------
+function ensureRepo() {
+  if (fs.existsSync(path.join(INSTALL_DIR, ".git"))) {
+    log("  -> 仓库已存在，拉取最新更新...");
+    try {
+      execSync("git pull --ff-only origin main", { cwd: INSTALL_DIR, stdio: "pipe" });
+    } catch {
+      log("  -> 本地有修改，强制同步远程...");
+      execSync("git fetch origin", { cwd: INSTALL_DIR, stdio: "pipe" });
+      execSync("git reset --hard origin/main", { cwd: INSTALL_DIR, stdio: "pipe" });
+    }
+  } else {
+    log("  -> 克隆仓库到 " + INSTALL_DIR + " ...");
+    fs.mkdirSync(path.dirname(INSTALL_DIR), { recursive: true });
+    if (fs.existsSync(INSTALL_DIR)) fs.rmSync(INSTALL_DIR, { recursive: true });
+    execSync(`git clone --depth 1 ${REPO_URL} "${INSTALL_DIR}"`, { stdio: "pipe" });
+  }
+  ok("仓库就绪");
+}
+
+// ============================================================
+// 模式一：项目初始化 (--init /path/to/project)
+// ============================================================
+if (initProject) {
+  log("");
+  log("========================================");
+  log("  项目规范初始化");
+  log("  系统: " + os.type());
+  log("  项目: " + initProject);
+  log("========================================");
+  log("");
+
+  // 检查项目目录
+  if (!fs.existsSync(initProject)) {
+    log("  -> 创建项目目录...");
+    fs.mkdirSync(initProject, { recursive: true });
+  }
+
+  // 获取/更新仓库
+  log("[1/3] 获取规范仓库...");
+  try { ensureRepo(); } catch (e) { fail("仓库获取失败: " + e.message); process.exit(1); }
+  log("");
+
+  const SRC = INSTALL_DIR;
+
+  // 部署 CODEBUDDY.md
+  log("[2/3] 部署 CODEBUDDY.md...");
+  const cbmd = path.join(initProject, "CODEBUDDY.md");
+  if (fs.existsSync(cbmd)) {
+    log("  -> CODEBUDDY.md 已存在，跳过");
+  } else {
+    fs.copyFileSync(path.join(SRC, "templates", "CODEBUDDY.md"), cbmd);
+    ok("CODEBUDDY.md -> " + cbmd);
+  }
+  log("");
+
+  // 部署 openspec/ 配置目录
+  log("[3/3] 部署 openspec/ 配置...");
+  const opsRulesDir = path.join(initProject, "openspec", "rules");
+  fs.mkdirSync(opsRulesDir, { recursive: true });
+  copyFiles(path.join(SRC, "rules"), ".md", opsRulesDir);
+  const cfgPath = path.join(initProject, "openspec", "config.yaml");
+  if (fs.existsSync(cfgPath)) {
+    fs.copyFileSync(cfgPath, cfgPath + ".bak");
+    log("  -> 已备份旧 config.yaml -> config.yaml.bak");
+  }
+  fs.copyFileSync(path.join(SRC, "templates", "openspec-config.yaml"), cfgPath);
+  ok("规则文件 -> " + opsRulesDir);
+  ok("config.yaml -> " + cfgPath);
+  log("");
+
+  log("========================================");
+  log("  \u2713 项目初始化完成！");
+  log("========================================");
+  log("");
+  log("后续操作：");
+  log("  1. 用 CodeBuddy 打开项目: " + initProject);
+  log("  2. 新建对话会话（规范在会话启动时加载）");
+  log("  3. 验证：问 AI '当前应用了哪些规则？'");
+  log("  4. 将 CODEBUDDY.md 和 openspec/ 提交到项目 Git 仓库");
+  log("");
+  process.exit(0);
+}
+
+// ============================================================
+// 模式二：全局安装（默认）
+// ============================================================
 log("");
 log("========================================");
 log("  企业编程规范 - 一键安装");
@@ -74,32 +171,11 @@ if (nodeMajor < 20) {
   process.exit(1);
 }
 ok("Node.js " + nodeVer);
-
 log("");
 
 // ---------- [2/6] 克隆 / 更新仓库 ----------
 log("[2/6] 获取规范仓库...");
-try {
-  if (fs.existsSync(path.join(INSTALL_DIR, ".git"))) {
-    log("  -> 仓库已存在，拉取最新更新...");
-    try {
-      execSync("git pull --ff-only origin main", { cwd: INSTALL_DIR, stdio: "pipe" });
-    } catch {
-      log("  -> 本地有修改，强制同步远程...");
-      execSync("git fetch origin", { cwd: INSTALL_DIR, stdio: "pipe" });
-      execSync("git reset --hard origin/main", { cwd: INSTALL_DIR, stdio: "pipe" });
-    }
-  } else {
-    log("  -> 克隆仓库到 " + INSTALL_DIR + " ...");
-    fs.mkdirSync(path.dirname(INSTALL_DIR), { recursive: true });
-    if (fs.existsSync(INSTALL_DIR)) fs.rmSync(INSTALL_DIR, { recursive: true });
-    execSync(`git clone --depth 1 ${REPO_URL} "${INSTALL_DIR}"`, { stdio: "pipe" });
-  }
-  ok("仓库就绪");
-} catch (e) {
-  fail("仓库获取失败: " + e.message);
-  process.exit(1);
-}
+try { ensureRepo(); } catch (e) { fail("仓库获取失败: " + e.message); process.exit(1); }
 log("");
 
 const SRC = INSTALL_DIR;
@@ -164,9 +240,7 @@ log("  \u2713 一键安装完成！");
 log("========================================");
 log("");
 log("后续操作：");
-log("  1. 新项目初始化：");
-log('     macOS:   ~/.workbuddy/coding-standards/init-project.sh /path/to/project');
-log('     Windows: & "$env:USERPROFILE\\.workbuddy\\coding-standards\\init-project.ps1" "D:\\project"');
+log("  1. 新项目初始化：npx github:BigMianBao/coding-standards --init /path/to/project");
 log("  2. 在 CodeBuddy 中新建会话，规范自动生效");
 log("  3. 验证：新会话中问 AI '当前应用了哪些规则？'");
 log("");
