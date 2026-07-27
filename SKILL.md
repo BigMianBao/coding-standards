@@ -157,11 +157,11 @@ fi
 
 ## Known Pitfalls (do NOT hit these)
 
-1. **install.js is binary corrupted** - never execute it, never use `npx` install path
-2. **setup.ps1 has PS5.1 UTF-8 encoding bug** - do NOT run setup.ps1 directly, execute steps manually via PowerShell tool
-3. **coding-standards.mdc frontmatter** - FIXED UPSTREAM (commit 85cc11a); Step 2 keeps auto-fix as safety net
-4. **openspec CLI EPERM on Windows default global dir** - Step 4 uses `--prefix` to bypass
-5. **MEMORY.md path conflict** - `~/.workbuddy/MEMORY.md` is occupied by coding standards; never write personal memories there
+1. **install.js / `npx` path is SAFE (no longer "binary corrupted")** - `install.js` is valid JavaScript; `npx github:BigMianBao/coding-standards` works as intended. The only hard requirement is **network access to GitHub**, because every installer clones the repo internally (step [2/6] / `ensureRepo()`). If `npx` or `git clone` is blocked by network, fall back to the manual copy steps (Steps 1–4) using a repo you already have locally.
+2. **setup.ps1: run from a local file, NOT `irm | iex`** - `setup.ps1` only uses `Copy-Item` (byte-for-byte copy) and `Write-Host`, so it has **NO UTF-8 encoding bug**. However, `$SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path` requires an actual script file path. If you download-and-run via `irm ... | iex`, `$MyInvocation.MyCommand.Path` is empty → `$SCRIPT_DIR` becomes `$null` → every `Copy-Item` fails. Always save the script first and run `.\setup.ps1` from its own directory.
+3. **coding-standards.mdc frontmatter** - FIXED UPSTREAM (commit 85cc11a); Step 2 keeps auto-fix as safety net.
+4. **openspec CLI EPERM on Windows default global dir** - Step 4 uses `--prefix` to bypass.
+5. **MEMORY.md path conflict (important for WorkBuddy users)** - `~/.workbuddy/MEMORY.md` is the global core-rules file this repo deploys (CodeBuddy context). In **WorkBuddy**, this exact path is ALSO the agent's user-level long-term memory file that the assistant reads and writes. `install.js` step [3/6] does `fs.copyFileSync(SRC/MEMORY.md, ~/.workbuddy/MEMORY.md)`, which overwrites anything previously written there. To avoid clobbering personal memories on a WorkBuddy machine: keep the two purposes separate — store the assistant's personal/user memories in the workspace memory dir (`.workbuddy/memory/`), not in this file, OR deploy the coding-standards rules under a distinct filename so an upgrade never wipes the memory file. Do not assume `~/.workbuddy/MEMORY.md` is safe to freely overwrite on a WorkBuddy installation.
 
 ## After install
 
