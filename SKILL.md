@@ -1,43 +1,23 @@
 # SKILL.md - AI Auto-Install Guide
 
-> **When a user tells you to install coding standards from this repo, read and follow this file.**
-> Clone the repo, then execute ALL steps below automatically. Do NOT ask the user to run scripts.
+> **You already cloned this repo to read this file.** The repo root is the directory containing this SKILL.md.
+> Execute ALL steps below automatically. Do NOT ask the user to run scripts. Do NOT clone the repo again.
+>
+> NOTE: Variables do NOT persist between tool calls. Set `$repoDir` (PowerShell) or `$REPO_DIR` (Bash)
+> to the repo root path at the start of each step that needs it.
 
 ## Prerequisites
 
 Check `git` and `npm` are available. If missing, tell user to install first.
 Detect OS: use PowerShell on Windows, Bash on macOS/Linux.
 
-## Step 1: Clone repo
+## Step 1: Deploy rule files
+
+Copy `rules/*.md` and `MEMORY.md` from the repo to `~/.workbuddy/`.
 
 ### Windows (PowerShell)
 ```powershell
-$repoDir = "$env:USERPROFILE\.workbuddy\coding-standards"
-if (Test-Path "$repoDir\.git") {
-  git -C $repoDir pull --ff-only
-} else {
-  Remove-Item -Recurse -Force $repoDir -ErrorAction SilentlyContinue
-  git clone --depth 1 https://github.com/BigMianBao/coding-standards.git $repoDir
-}
-```
-
-### macOS/Linux (Bash)
-```bash
-REPO_DIR="$HOME/.workbuddy/coding-standards"
-if [ -d "$REPO_DIR/.git" ]; then
-  git -C "$REPO_DIR" pull --ff-only
-else
-  rm -rf "$REPO_DIR"
-  git clone --depth 1 https://github.com/BigMianBao/coding-standards.git "$REPO_DIR"
-fi
-```
-
-## Step 2: Deploy rule files
-
-Copy `rules/*.md` and `MEMORY.md` to `~/.workbuddy/`.
-
-### Windows (PowerShell)
-```powershell
+$repoDir  = "<REPO_ROOT>"  # path to the directory containing this SKILL.md
 $rulesDir = "$env:USERPROFILE\.workbuddy\rules"
 $memFile  = "$env:USERPROFILE\.workbuddy\MEMORY.md"
 New-Item -ItemType Directory -Force -Path $rulesDir | Out-Null
@@ -54,6 +34,7 @@ Copy-Item "$repoDir\MEMORY.md" $memFile -Force
 
 ### macOS/Linux (Bash)
 ```bash
+REPO_DIR="<REPO_ROOT>"  # path to the directory containing this SKILL.md
 mkdir -p "$HOME/.workbuddy/rules"
 cp "$REPO_DIR/rules/"*.md "$HOME/.workbuddy/rules/"
 if [ -f "$HOME/.workbuddy/MEMORY.md" ] && ! diff -q "$HOME/.workbuddy/MEMORY.md" "$REPO_DIR/MEMORY.md" >/dev/null 2>&1; then
@@ -62,14 +43,15 @@ fi
 cp "$REPO_DIR/MEMORY.md" "$HOME/.workbuddy/MEMORY.md"
 ```
 
-## Step 3: Deploy RULE.mdc (frontmatter safety net)
+## Step 2: Deploy RULE.mdc (frontmatter safety net)
 
 The repo template `templates/coding-standards.mdc` has YAML frontmatter (fixed upstream 2026-07-27).
 This check is a safety net: if the file is missing `---` delimiters, auto-fix it.
 
 ### Windows (PowerShell)
 ```powershell
-$cbRules = "$env:USERPROFILE\.codebuddy\rules\coding-standards"
+$repoDir  = "<REPO_ROOT>"  # path to the directory containing this SKILL.md
+$cbRules  = "$env:USERPROFILE\.codebuddy\rules\coding-standards"
 New-Item -ItemType Directory -Force -Path $cbRules | Out-Null
 $mdc = [IO.File]::ReadAllText("$repoDir\templates\coding-standards.mdc", [Text.Encoding]::UTF8)
 if ($mdc -notmatch '^---\r?\n') {
@@ -90,6 +72,7 @@ $utf8NoBom = New-Object Text.UTF8Encoding $false
 
 ### macOS/Linux (Bash)
 ```bash
+REPO_DIR="<REPO_ROOT>"  # path to the directory containing this SKILL.md
 CB_RULES="$HOME/.codebuddy/rules/coding-standards"
 mkdir -p "$CB_RULES"
 cp "$REPO_DIR/templates/coding-standards.mdc" "$CB_RULES/RULE.mdc"
@@ -98,12 +81,13 @@ if ! head -1 "$CB_RULES/RULE.mdc" | grep -q '^---'; then
 fi
 ```
 
-## Step 4: Deploy commands + skills
+## Step 3: Deploy commands + skills
 
 ### Windows (PowerShell)
 ```powershell
-$cbCmds   = "$env:USERPROFILE\.codebuddy\commands\opsx"
-$cbSkills = "$env:USERPROFILE\.codebuddy\skills"
+$repoDir   = "<REPO_ROOT>"  # path to the directory containing this SKILL.md
+$cbCmds    = "$env:USERPROFILE\.codebuddy\commands\opsx"
+$cbSkills  = "$env:USERPROFILE\.codebuddy\skills"
 New-Item -ItemType Directory -Force -Path $cbCmds, $cbSkills | Out-Null
 Copy-Item "$repoDir\templates\codebuddy-commands\opsx\*.md" $cbCmds -Force
 Copy-Item "$repoDir\templates\codebuddy-skills\*" $cbSkills -Recurse -Force
@@ -111,12 +95,13 @@ Copy-Item "$repoDir\templates\codebuddy-skills\*" $cbSkills -Recurse -Force
 
 ### macOS/Linux (Bash)
 ```bash
+REPO_DIR="<REPO_ROOT>"  # path to the directory containing this SKILL.md
 mkdir -p "$HOME/.codebuddy/commands/opsx" "$HOME/.codebuddy/skills"
 cp "$REPO_DIR/templates/codebuddy-commands/opsx/"*.md "$HOME/.codebuddy/commands/opsx/"
 cp -r "$REPO_DIR/templates/codebuddy-skills/"* "$HOME/.codebuddy/skills/"
 ```
 
-## Step 5: Install openspec CLI
+## Step 4: Install openspec CLI
 
 ### Windows (PowerShell)
 Use `--prefix "$env:APPDATA\npm"` (user-writable, already on PATH).
@@ -136,7 +121,7 @@ if ! command -v openspec &>/dev/null; then
 fi
 ```
 
-## Step 6: Verify
+## Step 5: Verify
 
 Check ALL of these exist:
 - `~/.workbuddy/rules/` has >= 20 .md files
@@ -148,12 +133,34 @@ Check ALL of these exist:
 
 Report pass/fail for each item.
 
+## Optional: Save repo for future updates
+
+To enable future `git pull` updates, copy this repo to `~/.workbuddy/coding-standards`.
+
+### Windows (PowerShell)
+```powershell
+$dest = "$env:USERPROFILE\.workbuddy\coding-standards"
+if (-not (Test-Path "$dest\.git")) {
+  New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
+  Copy-Item -Recurse -Force "<REPO_ROOT>" $dest
+}
+```
+
+### macOS/Linux (Bash)
+```bash
+DEST="$HOME/.workbuddy/coding-standards"
+if [ ! -d "$DEST/.git" ]; then
+  mkdir -p "$(dirname "$DEST")"
+  cp -r "<REPO_ROOT>" "$DEST"
+fi
+```
+
 ## Known Pitfalls (do NOT hit these)
 
 1. **install.js is binary corrupted** - never execute it, never use `npx` install path
 2. **setup.ps1 has PS5.1 UTF-8 encoding bug** - do NOT run setup.ps1 directly, execute steps manually via PowerShell tool
-3. **coding-standards.mdc frontmatter** - FIXED UPSTREAM (commit 85cc11a); Step 3 keeps auto-fix as safety net
-4. **openspec CLI EPERM on Windows default global dir** - Step 5 uses `--prefix` to bypass
+3. **coding-standards.mdc frontmatter** - FIXED UPSTREAM (commit 85cc11a); Step 2 keeps auto-fix as safety net
+4. **openspec CLI EPERM on Windows default global dir** - Step 4 uses `--prefix` to bypass
 5. **MEMORY.md path conflict** - `~/.workbuddy/MEMORY.md` is occupied by coding standards; never write personal memories there
 
 ## After install
