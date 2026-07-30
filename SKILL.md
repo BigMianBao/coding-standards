@@ -83,23 +83,34 @@ fi
 
 ## Step 3: Deploy commands + skills
 
+Deploy to **CodeBuddy** (`~/.codebuddy/`) and **WorkBuddy** (`~/.workbuddy/skills/`).
+The WorkBuddy templates under `templates/workbuddy-skills/` are environment-agnostic skill
+wrappers (both `openspec-*` agent skills and `opsx-*` slash-command equivalents) with all
+`/opsx:` cross-references rewritten for WorkBuddy.
+
 ### Windows (PowerShell)
 ```powershell
 $repoDir   = "<REPO_ROOT>"  # path to the directory containing this SKILL.md
 $cbCmds    = "$env:USERPROFILE\.codebuddy\commands\opsx"
 $cbSkills  = "$env:USERPROFILE\.codebuddy\skills"
-New-Item -ItemType Directory -Force -Path $cbCmds, $cbSkills | Out-Null
+$wbSkills  = "$env:USERPROFILE\.workbuddy\skills"
+New-Item -ItemType Directory -Force -Path $cbCmds, $cbSkills, $wbSkills | Out-Null
 Copy-Item "$repoDir\templates\codebuddy-commands\opsx\*.md" $cbCmds -Force
 Copy-Item "$repoDir\templates\codebuddy-skills\*" $cbSkills -Recurse -Force
+Copy-Item "$repoDir\templates\workbuddy-skills\*" $wbSkills -Recurse -Force
 ```
 
 ### macOS/Linux (Bash)
 ```bash
 REPO_DIR="<REPO_ROOT>"  # path to the directory containing this SKILL.md
-mkdir -p "$HOME/.codebuddy/commands/opsx" "$HOME/.codebuddy/skills"
+mkdir -p "$HOME/.codebuddy/commands/opsx" "$HOME/.codebuddy/skills" "$HOME/.workbuddy/skills"
 cp "$REPO_DIR/templates/codebuddy-commands/opsx/"*.md "$HOME/.codebuddy/commands/opsx/"
 cp -r "$REPO_DIR/templates/codebuddy-skills/"* "$HOME/.codebuddy/skills/"
+cp -r "$REPO_DIR/templates/workbuddy-skills/"* "$HOME/.workbuddy/skills/"
 ```
+
+> Note: WorkBuddy discovers skills by scanning `~/.workbuddy/skills/` at session start.
+> Restart the WorkBuddy session after deployment for the new skills to load.
 
 ## Step 4: Install openspec CLI
 
@@ -129,6 +140,8 @@ Check ALL of these exist:
 - `~/.codebuddy/rules/coding-standards/RULE.mdc` exists AND first line is `---`
 - `~/.codebuddy/commands/opsx/propose.md` exists
 - `~/.codebuddy/skills/openspec-propose/SKILL.md` exists
+- `~/.workbuddy/skills/openspec-propose/SKILL.md` exists
+- `~/.workbuddy/skills/opsx-propose/SKILL.md` exists
 - `openspec --version` works
 
 Report pass/fail for each item.
